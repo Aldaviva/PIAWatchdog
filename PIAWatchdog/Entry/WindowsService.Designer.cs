@@ -1,6 +1,6 @@
-﻿namespace PIAWatchdog
+﻿namespace PIAWatchdog.Entry
 {
-    partial class Service1
+    partial class WindowsService
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,8 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
-            this.ServiceName = "Service1";
+            // 
+            // PIAWatchdog
+            // 
+            this.ServiceName = "Private Internet Access WatchdogManager";
+
         }
 
         #endregion

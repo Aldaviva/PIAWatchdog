@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Private Internet Access WatchdogManager")]
-[assembly: AssemblyDescription("Kill processes when VPN goes down.")]
+[assembly: AssemblyTitle("Tests")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Ben Hutchison")]
-[assembly: AssemblyProduct("Private Internet Access WatchdogManager")]
-[assembly: AssemblyCopyright("© 2017 Ben Hutchison")]
+[assembly: AssemblyCompany("Ben's World")]
+[assembly: AssemblyProduct("Tests")]
+[assembly: AssemblyCopyright("Copyright © Ben's World 2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("04199a34-a9f8-4f9c-bd86-70ae738ab3ba")]
+[assembly: Guid("dc28ba43-2fb5-43e5-9ab5-af5803d10278")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -34,6 +34,3 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
-
-[assembly: InternalsVisibleTo("Tests")]
-[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")] //unit tests
