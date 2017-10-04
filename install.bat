@@ -1,0 +1,1 @@
+sc create PIAWatchdog start= auto binPath= "c:\Program Files (x86)\PIAWatchdog\PIAWatchdog.exe" DisplayName= "Private Internet Access Watchdog"

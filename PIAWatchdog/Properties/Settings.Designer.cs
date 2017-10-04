@@ -25,7 +25,7 @@ namespace PIAWatchdog.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10.10.10.1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("10.0.10.1")]
         public string healthCheckPingHost {
             get {
                 return ((string)(this["healthCheckPingHost"]));
@@ -37,6 +37,7 @@ namespace PIAWatchdog.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("uTorrent")]
         public global::System.Collections.Generic.List<System.String> processesToKillOnOutage {
             get {
                 return ((global::System.Collections.Generic.List<System.String>)(this["processesToKillOnOutage"]));
@@ -49,12 +50,36 @@ namespace PIAWatchdog.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("5000")]
-        public int healthCheckInterval {
+        public int healthCheckIntervalWhileHealthy {
             get {
-                return ((int)(this["healthCheckInterval"]));
+                return ((int)(this["healthCheckIntervalWhileHealthy"]));
             }
             set {
-                this["healthCheckInterval"] = value;
+                this["healthCheckIntervalWhileHealthy"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1000")]
+        public int healthCheckIntervalWhileUnhealthy {
+            get {
+                return ((int)(this["healthCheckIntervalWhileUnhealthy"]));
+            }
+            set {
+                this["healthCheckIntervalWhileUnhealthy"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3")]
+        public int consecutiveDownForOutage {
+            get {
+                return ((int)(this["consecutiveDownForOutage"]));
+            }
+            set {
+                this["consecutiveDownForOutage"] = value;
             }
         }
     }

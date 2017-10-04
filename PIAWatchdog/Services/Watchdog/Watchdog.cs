@@ -13,7 +13,9 @@ namespace PIAWatchdog.Services.Watchdog
     {
         string HostToWatch { get; set; }
         ICollection<string> ProcessesToKillOnHostDown { get; set; }
-        TimeSpan HealthCheckInterval { get; set; }
+        TimeSpan HealthCheckIntervalWhileHealthy { get; set; }
+        TimeSpan HealthCheckIntervalWhileUnhealthy { get; set; }
+        int ConsecutiveDownForOutage { get; set; }
 
         void Start(CancellationToken cancellationToken);
     }
@@ -21,20 +23,20 @@ namespace PIAWatchdog.Services.Watchdog
     [Component]
     public class WatchdogImpl : Watchdog
     {
-        private const int CONSECUTIVE_DOWN_FOR_OUTAGE = 3;
-
         private readonly HealthChecker healthChecker;
         private readonly ProcessKiller processKiller;
 
         public string HostToWatch { get; set; }
         public ICollection<string> ProcessesToKillOnHostDown { get; set; }
-        public TimeSpan HealthCheckInterval { get; set; }
+        public TimeSpan HealthCheckIntervalWhileHealthy { get; set; }
+        public TimeSpan HealthCheckIntervalWhileUnhealthy { get; set; }
+        public int ConsecutiveDownForOutage { get; set; } = 3;
 
-        private bool IsOutage => consecutiveHealthFailures >= CONSECUTIVE_DOWN_FOR_OUTAGE && !killedProcessesDuringCurrentOutage;
+        private bool IsOutage => consecutiveHealthFailures >= ConsecutiveDownForOutage;
 
         private int consecutiveHealthFailures;
-        private bool killedProcessesDuringCurrentOutage;
-        private Task runner;
+
+        internal Task Runner;
 
         public WatchdogImpl(HealthChecker healthChecker, ProcessKiller processKiller)
         {
@@ -44,12 +46,12 @@ namespace PIAWatchdog.Services.Watchdog
 
         public void Start(CancellationToken cancellationToken)
         {
-            if (runner != null)
+            if (Runner != null)
             {
                 throw new InvalidOperationException("Watchdog already started, call Stop() first.");
             }
 
-            runner = Task.Factory.StartNew(async () => await CheckContinuously(cancellationToken), cancellationToken);
+            Runner = Task.Factory.StartNew(async () => await CheckContinuously(cancellationToken), cancellationToken);
         }
 
         private async Task CheckContinuously(CancellationToken cancellationToken)
@@ -58,17 +60,19 @@ namespace PIAWatchdog.Services.Watchdog
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                await CheckOnce(cancellationToken);
-                await Task.Delay(HealthCheckInterval, cancellationToken);
+                bool isHealthy = await CheckOnce(cancellationToken);
+                TimeSpan delayBeforeNextCheck = isHealthy ? HealthCheckIntervalWhileHealthy : HealthCheckIntervalWhileUnhealthy;
+                await Task.Delay(delayBeforeNextCheck, cancellationToken);
             }
         }
 
-        internal async Task CheckOnce(CancellationToken cancellationToken)
+        internal async Task<bool> CheckOnce(CancellationToken cancellationToken)
         {
             Console.WriteLine($"Checking if {HostToWatch} is healthy...");
 
             bool isHostHealthy = await healthChecker.IsHostHealthy(HostToWatch, cancellationToken);
             await OnHostHealthyOrDown(isHostHealthy, cancellationToken);
+            return isHostHealthy;
         }
 
         private async Task OnHostHealthyOrDown(bool isHostHealthy, CancellationToken cancellationToken)
@@ -93,32 +97,30 @@ namespace PIAWatchdog.Services.Watchdog
         private async Task OnHostOutage(CancellationToken cancellationToken)
         {
             Console.WriteLine(
-                $"{HostToWatch} has been down {CONSECUTIVE_DOWN_FOR_OUTAGE} times in a row, killing {string.Join(", ", ProcessesToKillOnHostDown)}");
+                $"Outage! {HostToWatch} has been down {consecutiveHealthFailures} times in a row, killing {string.Join(", ", ProcessesToKillOnHostDown)}");
             await Task.WhenAll(ProcessesToKillOnHostDown.Select(process =>
                 processKiller.KillProcess(process, cancellationToken)));
-            killedProcessesDuringCurrentOutage = true;
         }
 
         private void ResetHealthState()
         {
             consecutiveHealthFailures = 0;
-            killedProcessesDuringCurrentOutage = false;
         }
 
         public void Dispose()
         {
-            if (!runner.IsCanceled && !runner.IsCompleted && !runner.IsFaulted)
+            if (Runner != null && !Runner.IsCanceled && !Runner.IsCompleted && !Runner.IsFaulted)
             {
                 try
                 {
-                    runner.Wait();
+                    Runner.Wait();
                 }
                 catch (AggregateException)
                 {
                     //dispose anyway
                 }
             }
-            runner.Dispose();
+            Runner?.Dispose();
         }
     }
 }

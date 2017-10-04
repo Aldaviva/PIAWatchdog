@@ -1,5 +1,6 @@
 ﻿using PIAWatchdog.Exceptions;
 
+// ReSharper disable once CheckNamespace
 namespace PIAWatchdog.Properties
 {
     // This class allows you to handle specific events on the settings class:
@@ -9,16 +10,6 @@ namespace PIAWatchdog.Properties
     //  The SettingsSaving event is raised before the setting values are saved.
     internal sealed partial class Settings
     {
-        public Settings()
-        {
-            // // To add event handlers for saving and changing settings, uncomment the lines below:
-            //
-            // this.SettingChanging += this.SettingChangingEventHandler;
-            //
-            // this.SettingsSaving += this.SettingsSavingEventHandler;
-            //
-        }
-
         public void Validate()
         {
             if (string.IsNullOrWhiteSpace(healthCheckPingHost))
@@ -27,10 +18,16 @@ namespace PIAWatchdog.Properties
                     "must be the host or IP address to ping, such as 10.10.10.1");
             }
 
-            if (healthCheckInterval <= 0)
+            if (healthCheckIntervalWhileHealthy <= 0)
             {
-                throw new SettingsException("healthCheckInterval", healthCheckInterval,
-                    "must be the number of milliseconds between health checks, such as 5000");
+                throw new SettingsException("healthCheckInterval", healthCheckIntervalWhileHealthy,
+                    "must be the number of milliseconds between health checks if the healthCheckPingHost was healthy after the most recent check, such as 5000");
+            }
+            
+            if (healthCheckIntervalWhileUnhealthy <= 0)
+            {
+                throw new SettingsException("healthCheckIntervalWhileUnhealthy", healthCheckIntervalWhileUnhealthy,
+                    "must be the number of milliseconds between health checks if the healthCheckPingHost was unhealthy after the most recent check, such as 5000");
             }
 
             if (processesToKillOnOutage == null || processesToKillOnOutage.Count == 0)
@@ -53,16 +50,12 @@ namespace PIAWatchdog.Properties
                         "name of process to kill must not end with \".exe\"");
                 }
             }
-        }
 
-        private void SettingChangingEventHandler(object sender, System.Configuration.SettingChangingEventArgs e)
-        {
-            // Add code to handle the SettingChangingEvent event here.
-        }
-
-        private void SettingsSavingEventHandler(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            // Add code to handle the SettingsSaving event here.
+            if (consecutiveDownForOutage <= 0)
+            {
+                throw new SettingsException("consecutiveDownForOutage", consecutiveDownForOutage,
+                    "must be the number of times the healthCheckPingHost is down in a row before the processesToKillOnOutage are killed");
+            }
         }
     }
 }

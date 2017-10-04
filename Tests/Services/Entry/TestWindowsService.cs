@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ServiceProcess;
+﻿using System.Collections.Generic;
 using PIAWatchdog.Entry;
 using PIAWatchdog.Properties;
 using Xunit;
@@ -16,7 +14,7 @@ namespace Tests.Services.Entry
             service = new TestableWindowsService();
 
             Settings.Default.healthCheckPingHost = "127.0.0.1";
-            Settings.Default.healthCheckInterval = 5000;
+            Settings.Default.healthCheckIntervalWhileHealthy = 5000;
             Settings.Default.processesToKillOnOutage = new List<string> { "calc" };
         }
 

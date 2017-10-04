@@ -9,7 +9,6 @@ using PIAWatchdog.Services.Health;
 using PIAWatchdog.Services.Killing;
 using PIAWatchdog.Services.Watchdog;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Tests.Services.Watchdog
 {
@@ -28,7 +27,8 @@ namespace Tests.Services.Watchdog
             {
                 HostToWatch = "1.2.3.4",
                 ProcessesToKillOnHostDown = new List<string> { "calc" },
-                HealthCheckInterval = TimeSpan.FromMilliseconds(50)
+                HealthCheckIntervalWhileHealthy = TimeSpan.FromMilliseconds(50),
+                HealthCheckIntervalWhileUnhealthy = TimeSpan.FromMilliseconds(50),
             };
         }
 
@@ -59,7 +59,8 @@ namespace Tests.Services.Watchdog
 
             A.CallTo(() => healthChecker.IsHostHealthy("1.2.3.4", cancellationTokenSource.Token))
                 .MustHaveHappened(Repeated.Exactly.Times(CONSECUTIVE_DOWN_FOR_OUTAGE * 2));
-            A.CallTo(() => processKiller.KillProcess("calc", A<CancellationToken>._)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => processKiller.KillProcess("calc", A<CancellationToken>._))
+                .MustHaveHappened(Repeated.Exactly.Times(CONSECUTIVE_DOWN_FOR_OUTAGE * 2 - 2));
         }
 
         [Fact]
@@ -91,7 +92,7 @@ namespace Tests.Services.Watchdog
                 {
                     Task.Factory.StartNew(cancellationTokenSource.Cancel);
                 }
-                return true;
+                return completedChecks == maxChecks;
             });
 
             var stopwatch = new Stopwatch();
@@ -105,8 +106,8 @@ namespace Tests.Services.Watchdog
                 .MustHaveHappened(Repeated.Exactly.Times(maxChecks));
 
             stopwatch.ElapsedMilliseconds.Should().BeInRange(
-                (long) (watchdog.HealthCheckInterval.TotalMilliseconds * (maxChecks - 1)),
-                (long) (watchdog.HealthCheckInterval.TotalMilliseconds * (maxChecks+1)),
+                (long) (watchdog.HealthCheckIntervalWhileHealthy.TotalMilliseconds * (maxChecks - 1)),
+                (long) (watchdog.HealthCheckIntervalWhileHealthy.TotalMilliseconds * (maxChecks + 1)),
                 "should have delayed after each check (except last one, because we cancelled before the last delay)");
         }
 
@@ -114,7 +115,7 @@ namespace Tests.Services.Watchdog
         public void CannotStartWhenAlreadyStarted()
         {
             A.CallTo(() => healthChecker.IsHostHealthy(A<string>._, A<CancellationToken>._)).Returns(true);
-            
+
             watchdog.Start(cancellationTokenSource.Token);
             try
             {
@@ -125,6 +126,20 @@ namespace Tests.Services.Watchdog
             {
                 cancellationTokenSource.Cancel();
             }
+        }
+
+        [Fact]
+        public void DisposeWaitsForSuccessfulRunner()
+        {
+            watchdog.Runner = Task.Delay(10);
+            watchdog.Dispose();
+        }
+
+        [Fact]
+        public void DisposeWaitsForUnsuccessfulRunner()
+        {
+            watchdog.Runner = Task.Delay(10).ContinueWith(t => throw new Exception("hurk"));
+            watchdog.Dispose();
         }
     }
 }

@@ -4,7 +4,6 @@ using System.IO;
 using PIAWatchdog.Entry;
 using PIAWatchdog.Properties;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Tests.Services.Entry
 {
@@ -13,7 +12,7 @@ namespace Tests.Services.Entry
         public TestMainClass()
         {
             Settings.Default.healthCheckPingHost = "127.0.0.1";
-            Settings.Default.healthCheckInterval = 1000;
+            Settings.Default.healthCheckIntervalWhileHealthy = 1000;
             Settings.Default.processesToKillOnOutage = new List<string> { "calc" };
         }
 

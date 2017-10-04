@@ -3,13 +3,19 @@
   <Profiles />
   <Settings>
     <Setting Name="healthCheckPingHost" Type="System.String" Scope="User">
-      <Value Profile="(Default)">10.10.10.1</Value>
+      <Value Profile="(Default)">10.0.10.1</Value>
     </Setting>
     <Setting Name="processesToKillOnOutage" Type="System.Collections.Generic.List&lt;System.String&gt;" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">uTorrent</Value>
     </Setting>
-    <Setting Name="healthCheckInterval" Type="System.Int32" Scope="User">
+    <Setting Name="healthCheckIntervalWhileHealthy" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">5000</Value>
+    </Setting>
+    <Setting Name="healthCheckIntervalWhileUnhealthy" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">1000</Value>
+    </Setting>
+    <Setting Name="consecutiveDownForOutage" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">3</Value>
     </Setting>
   </Settings>
 </SettingsFile>

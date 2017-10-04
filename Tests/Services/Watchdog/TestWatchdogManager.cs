@@ -28,7 +28,7 @@ namespace Tests.Services.Watchdog
             watchdogManager = new WatchdogManagerImpl(healthChecker, processKiller, WatchdogFactory);
 
             Settings settings = Settings.Default;
-            settings.healthCheckInterval = 100;
+            settings.healthCheckIntervalWhileHealthy = 100;
             settings.healthCheckPingHost = "1.2.3.4";
             settings.processesToKillOnOutage = new List<string> { "calc" };
         }
@@ -39,7 +39,7 @@ namespace Tests.Services.Watchdog
             watchdogManager.Start();
 
             A.CallTo(() => watchdog.Start(A<CancellationToken>._)).MustHaveHappened();
-            A.CallToSet(() => watchdog.HealthCheckInterval).To(TimeSpan.FromMilliseconds(100)).MustHaveHappened();
+            A.CallToSet(() => watchdog.HealthCheckIntervalWhileHealthy).To(TimeSpan.FromMilliseconds(100)).MustHaveHappened();
             A.CallToSet(() => watchdog.HostToWatch).To("1.2.3.4").MustHaveHappened();
             A.CallToSet(() => watchdog.ProcessesToKillOnHostDown)
                 .To(() => A<ICollection<string>>.That.IsSameSequenceAs(new List<string> { "calc" })).MustHaveHappened();
@@ -57,7 +57,7 @@ namespace Tests.Services.Watchdog
         [Fact]
         public void ValidateSettings()
         {
-            Settings.Default.healthCheckInterval = 0;
+            Settings.Default.healthCheckIntervalWhileHealthy = 0;
             Action thrower = () => watchdogManager.Start();
             thrower.ShouldThrow<SettingsException>();
         }

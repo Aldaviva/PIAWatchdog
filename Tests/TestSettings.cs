@@ -16,10 +16,14 @@ namespace Tests
         {
             new object[] { "healthCheckPingHost", "1.2.3.4" },
             new object[] { "healthCheckPingHost", "google.com" },
-            new object[] { "healthCheckInterval", 500 },
-            new object[] { "healthCheckInterval", 5000 },
-            new object[] { "processesToKillOnOutage", new List<string>{"calc"} },
-            new object[] { "processesToKillOnOutage", new List<string>{"calc", "notepad"} }
+            new object[] { "healthCheckIntervalWhileHealthy", 500 },
+            new object[] { "healthCheckIntervalWhileHealthy", 5000 },
+            new object[] { "healthCheckIntervalWhileUnhealthy", 500 },
+            new object[] { "healthCheckIntervalWhileUnhealthy", 5000 },
+            new object[] { "consecutiveDownForOutage", 1 },
+            new object[] { "consecutiveDownForOutage", 5 },
+            new object[] { "processesToKillOnOutage", new List<string> { "calc" } },
+            new object[] { "processesToKillOnOutage", new List<string> { "calc", "notepad" } }
         };
 
         public static IEnumerable<object[]> InvalidSettings => new[]
@@ -27,16 +31,21 @@ namespace Tests
             new object[] { "healthCheckPingHost", " " },
             new object[] { "healthCheckPingHost", "" },
             new object[] { "healthCheckPingHost", null },
-            new object[] { "healthCheckInterval", 0 },
-            new object[] { "healthCheckInterval", -1 },
-            new object[] { "processesToKillOnOutage", null},
+            new object[] { "healthCheckIntervalWhileHealthy", 0 },
+            new object[] { "healthCheckIntervalWhileHealthy", -1 },
+            new object[] { "healthCheckIntervalWhileUnhealthy", 0 },
+            new object[] { "healthCheckIntervalWhileUnhealthy", -1 },
+            new object[] { "consecutiveDownForOutage", 0 },
+            new object[] { "consecutiveDownForOutage", -1 },
+            new object[] { "processesToKillOnOutage", null },
             new object[] { "processesToKillOnOutage", new List<string>() },
-            new object[] { "processesToKillOnOutage", new List<string>{""} },
-            new object[] { "processesToKillOnOutage", new List<string>{" "} },
-            new object[] { "processesToKillOnOutage", new List<string>{"calc.exe"} },
-            new object[] { "processesToKillOnOutage", new List<string>{"calc.exe", "notepad.exe"} },
-            new object[] { "processesToKillOnOutage", new List<string>{"calc.exe", "notepad"} },
-            new object[] { "processesToKillOnOutage", new List<string>{"calc", "notepad.exe"} }
+            new object[] { "processesToKillOnOutage", new List<string> { null } },
+            new object[] { "processesToKillOnOutage", new List<string> { "" } },
+            new object[] { "processesToKillOnOutage", new List<string> { " " } },
+            new object[] { "processesToKillOnOutage", new List<string> { "calc.exe" } },
+            new object[] { "processesToKillOnOutage", new List<string> { "calc.exe", "notepad.exe" } },
+            new object[] { "processesToKillOnOutage", new List<string> { "calc.exe", "notepad" } },
+            new object[] { "processesToKillOnOutage", new List<string> { "calc", "notepad.exe" } }
         };
 
         [Fact]
@@ -46,7 +55,8 @@ namespace Tests
             {
                 string name = settingsProperty.Name;
                 ValidSettings.Should().Contain(theories => theories[0].Equals(name), $"ValidSettings must test the {name} setting");
-                InvalidSettings.Should().Contain(theories => theories[0].Equals(name), $"InvalidSettings must test the {name} setting");
+                InvalidSettings.Should().Contain(theories => theories[0].Equals(name),
+                    $"InvalidSettings must test the {name} setting");
             }
         }
 
@@ -61,7 +71,6 @@ namespace Tests
         {
             TestSettingsValidation(settingsKey, settingsValue, false);
         }
-
 
         private static void TestSettingsValidation(string settingsKey, object settingsValue, bool isValid)
         {
@@ -88,7 +97,9 @@ namespace Tests
                     "notepad"
                 },
                 healthCheckPingHost = "1.2.3.4",
-                healthCheckInterval = 1000
+                healthCheckIntervalWhileHealthy = 1000,
+                consecutiveDownForOutage = 3,
+                healthCheckIntervalWhileUnhealthy = 500
             };
             settings.Validate();
             return settings;

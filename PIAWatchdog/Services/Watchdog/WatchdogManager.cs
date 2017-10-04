@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using Autofac.Features.OwnedInstances;
 using PIAWatchdog.Exceptions;
@@ -35,17 +34,15 @@ namespace PIAWatchdog.Services.Watchdog
             {
                 throw new InvalidOperationException("WatchdogManager is already started, call Stop() first.");
             }
-
             Settings settings = Settings.Default;
             ValidateSettings(settings);
-            string hostToWatch = settings.healthCheckPingHost;
-            ICollection<string> processesToKillOnHostDown = settings.processesToKillOnOutage;
-            TimeSpan healthCheckInterval = TimeSpan.FromMilliseconds(settings.healthCheckInterval);
 
             watchdog = watchdogFactory();
-            watchdog.Value.HealthCheckInterval = healthCheckInterval;
-            watchdog.Value.HostToWatch = hostToWatch;
-            watchdog.Value.ProcessesToKillOnHostDown = processesToKillOnHostDown;
+            watchdog.Value.HealthCheckIntervalWhileHealthy = TimeSpan.FromMilliseconds(settings.healthCheckIntervalWhileHealthy);
+            watchdog.Value.HealthCheckIntervalWhileUnhealthy = TimeSpan.FromMilliseconds(settings.healthCheckIntervalWhileUnhealthy);
+            watchdog.Value.HostToWatch = settings.healthCheckPingHost;
+            watchdog.Value.ProcessesToKillOnHostDown = settings.processesToKillOnOutage;
+            watchdog.Value.ConsecutiveDownForOutage = settings.consecutiveDownForOutage;
 
             watchdog.Value.Start(cancellationTokenSource.Token);
         }

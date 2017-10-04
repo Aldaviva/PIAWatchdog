@@ -24,7 +24,7 @@ namespace PIAWatchdog.Services.Killing
                 Task.Factory.StartNew(() => KillProcess(process), cancellationToken)));
         }
 
-        private static void KillProcess(Process process)
+        internal static void KillProcess(Process process)
         {
             string name = process.ProcessName;
             int pid = process.Id;
