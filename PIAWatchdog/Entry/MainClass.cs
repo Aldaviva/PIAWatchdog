@@ -9,6 +9,7 @@ namespace PIAWatchdog.Entry
 {
     public static class MainClass
     {
+
         public static void Main(string[] args)
         {
             if (args.Contains("--console"))

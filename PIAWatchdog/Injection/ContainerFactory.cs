@@ -4,7 +4,7 @@ using Autofac;
 
 namespace PIAWatchdog.Injection
 {
-    public class ContainerFactory
+    public static class ContainerFactory
     {
         public static IContainer CreateContainer()
         {
@@ -14,7 +14,7 @@ namespace PIAWatchdog.Injection
             containerBuilder.RegisterAssemblyTypes(assembly)
                 .Where(t => t.GetCustomAttribute<ComponentAttribute>() != null)
                 .AsImplementedInterfaces()
-                .InstancePerLifetimeScope()
+                .SingleInstance()
                 .OnActivated(eventArgs =>
                 {
                     eventArgs.Instance.GetType()

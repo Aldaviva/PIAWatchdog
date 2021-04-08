@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using FakeItEasy;
 using FluentAssertions;
+using PIAWatchdog.Services.Enablement;
 using PIAWatchdog.Services.Health;
-using PIAWatchdog.Services.Killing;
 using PIAWatchdog.Services.Watchdog;
 using Xunit;
 
@@ -18,7 +18,7 @@ namespace Tests.Services.Watchdog
 
         private readonly WatchdogImpl watchdog;
         private readonly HealthChecker healthChecker = A.Fake<HealthChecker>();
-        private readonly ProcessKiller processKiller = A.Fake<ProcessKiller>();
+        private readonly ProcessEnabler processKiller = A.Fake<ProcessEnabler>();
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         public TestWatchdog()
@@ -44,7 +44,7 @@ namespace Tests.Services.Watchdog
 
             A.CallTo(() => healthChecker.IsHostHealthy("1.2.3.4", cancellationTokenSource.Token))
                 .MustHaveHappened(Repeated.Exactly.Times(CONSECUTIVE_DOWN_FOR_OUTAGE * 2));
-            A.CallTo(() => processKiller.KillProcess(A<string>._, A<CancellationToken>._)).MustNotHaveHappened();
+            A.CallTo(() => processKiller.DisableProcesses(A<CancellationToken>._)).MustNotHaveHappened();
         }
 
         [Fact]
@@ -59,7 +59,7 @@ namespace Tests.Services.Watchdog
 
             A.CallTo(() => healthChecker.IsHostHealthy("1.2.3.4", cancellationTokenSource.Token))
                 .MustHaveHappened(Repeated.Exactly.Times(CONSECUTIVE_DOWN_FOR_OUTAGE * 2));
-            A.CallTo(() => processKiller.KillProcess("calc", A<CancellationToken>._))
+            A.CallTo(() => processKiller.DisableProcesses(A<CancellationToken>._))
                 .MustHaveHappened(Repeated.Exactly.Times(CONSECUTIVE_DOWN_FOR_OUTAGE * 2 - 2));
         }
 
@@ -77,7 +77,7 @@ namespace Tests.Services.Watchdog
 
             A.CallTo(() => healthChecker.IsHostHealthy("1.2.3.4", cancellationTokenSource.Token))
                 .MustHaveHappened(Repeated.Exactly.Times(isHealthyResponses.Length));
-            A.CallTo(() => processKiller.KillProcess("calc", A<CancellationToken>._)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => processKiller.DisableProcesses(A<CancellationToken>._)).MustHaveHappened(Repeated.Exactly.Twice);
         }
 
         [Fact]
@@ -120,7 +120,7 @@ namespace Tests.Services.Watchdog
             try
             {
                 Action secondStart = () => watchdog.Start(cancellationTokenSource.Token);
-                secondStart.ShouldThrow<InvalidOperationException>();
+                secondStart.Should().Throw<InvalidOperationException>();
             }
             finally
             {

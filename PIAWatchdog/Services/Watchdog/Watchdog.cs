@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using PIAWatchdog.Injection;
+using PIAWatchdog.Services.Enablement;
 using PIAWatchdog.Services.Health;
-using PIAWatchdog.Services.Killing;
 
 namespace PIAWatchdog.Services.Watchdog
 {
@@ -24,7 +23,7 @@ namespace PIAWatchdog.Services.Watchdog
     public class WatchdogImpl : Watchdog
     {
         private readonly HealthChecker healthChecker;
-        private readonly ProcessKiller processKiller;
+        private readonly ProcessEnabler processKiller;
 
         public string HostToWatch { get; set; }
         public ICollection<string> ProcessesToKillOnHostDown { get; set; }
@@ -38,7 +37,7 @@ namespace PIAWatchdog.Services.Watchdog
 
         internal Task Runner;
 
-        public WatchdogImpl(HealthChecker healthChecker, ProcessKiller processKiller)
+        public WatchdogImpl(HealthChecker healthChecker, ProcessEnabler processKiller)
         {
             this.healthChecker = healthChecker;
             this.processKiller = processKiller;
@@ -56,13 +55,21 @@ namespace PIAWatchdog.Services.Watchdog
 
         private async Task CheckContinuously(CancellationToken cancellationToken)
         {
-            ResetHealthState();
-
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                bool isHealthy = await CheckOnce(cancellationToken);
-                TimeSpan delayBeforeNextCheck = isHealthy ? HealthCheckIntervalWhileHealthy : HealthCheckIntervalWhileUnhealthy;
-                await Task.Delay(delayBeforeNextCheck, cancellationToken);
+                ResetHealthState();
+
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    bool isHealthy = await CheckOnce(cancellationToken);
+                    TimeSpan delayBeforeNextCheck = isHealthy ? HealthCheckIntervalWhileHealthy : HealthCheckIntervalWhileUnhealthy;
+                    await Task.Delay(delayBeforeNextCheck, cancellationToken);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Oh no! " + e);
+                throw;
             }
         }
 
@@ -77,6 +84,8 @@ namespace PIAWatchdog.Services.Watchdog
 
         private async Task OnHostHealthyOrDown(bool isHostHealthy, CancellationToken cancellationToken)
         {
+            var wasOutage = IsOutage;
+
             if (isHostHealthy)
             {
                 Console.WriteLine($"{HostToWatch} is up.");
@@ -92,14 +101,23 @@ namespace PIAWatchdog.Services.Watchdog
             {
                 await OnHostOutage(cancellationToken);
             }
+            else if (wasOutage)
+            {
+                await OnHostOutageOver(cancellationToken);
+            }
         }
 
         private async Task OnHostOutage(CancellationToken cancellationToken)
         {
             Console.WriteLine(
-                $"Outage! {HostToWatch} has been down {consecutiveHealthFailures} times in a row, killing {string.Join(", ", ProcessesToKillOnHostDown)}");
-            await Task.WhenAll(ProcessesToKillOnHostDown.Select(process =>
-                processKiller.KillProcess(process, cancellationToken)));
+                $"Outage! {HostToWatch} has been down {consecutiveHealthFailures} times in a row, killing {string.Join(", ", ProcessesToKillOnHostDown)}.");
+            await processKiller.DisableProcesses(cancellationToken);
+        }
+
+        private async Task OnHostOutageOver(CancellationToken cancellationToken)
+        {
+            Console.WriteLine($"The outage is over. Reenabling {string.Join(", ", ProcessesToKillOnHostDown)}.");
+            await processKiller.EnableProcesses(cancellationToken);
         }
 
         private void ResetHealthState()
@@ -120,6 +138,7 @@ namespace PIAWatchdog.Services.Watchdog
                     //dispose anyway
                 }
             }
+
             Runner?.Dispose();
         }
     }

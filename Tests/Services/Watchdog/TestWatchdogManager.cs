@@ -6,8 +6,8 @@ using FakeItEasy;
 using FluentAssertions;
 using PIAWatchdog.Exceptions;
 using PIAWatchdog.Properties;
+using PIAWatchdog.Services.Enablement;
 using PIAWatchdog.Services.Health;
-using PIAWatchdog.Services.Killing;
 using PIAWatchdog.Services.Watchdog;
 using Xunit;
 
@@ -16,8 +16,7 @@ namespace Tests.Services.Watchdog
     public class TestWatchdogManager : IDisposable
     {
         private readonly WatchdogManagerImpl watchdogManager;
-        private HealthChecker healthChecker = A.Fake<HealthChecker>();
-        private ProcessKiller processKiller = A.Fake<ProcessKiller>();
+        private ProcessEnabler processKiller = A.Fake<ProcessEnabler>();
         private PIAWatchdog.Services.Watchdog.Watchdog watchdog = A.Fake<PIAWatchdog.Services.Watchdog.Watchdog>();
 
         public TestWatchdogManager()
@@ -25,7 +24,9 @@ namespace Tests.Services.Watchdog
             Owned<PIAWatchdog.Services.Watchdog.Watchdog> WatchdogFactory() =>
                 new Owned<PIAWatchdog.Services.Watchdog.Watchdog>(watchdog, this);
 
-            watchdogManager = new WatchdogManagerImpl(healthChecker, processKiller, WatchdogFactory);
+            Owned<ProcessEnabler> ProcessEnablerFactory() => new Owned<ProcessEnabler>(processKiller, this);
+
+            watchdogManager = new WatchdogManagerImpl(ProcessEnablerFactory, WatchdogFactory);
 
             Settings settings = Settings.Default;
             settings.healthCheckIntervalWhileHealthy = 100;
@@ -51,7 +52,7 @@ namespace Tests.Services.Watchdog
             watchdogManager.Start();
 
             Action secondStart = () => watchdogManager.Start();
-            secondStart.ShouldThrow<InvalidOperationException>();
+            secondStart.Should().Throw<InvalidOperationException>();
         }
 
         [Fact]
@@ -59,7 +60,7 @@ namespace Tests.Services.Watchdog
         {
             Settings.Default.healthCheckIntervalWhileHealthy = 0;
             Action thrower = () => watchdogManager.Start();
-            thrower.ShouldThrow<SettingsException>();
+            thrower.Should().Throw<SettingsException>();
         }
 
         public void Dispose()

@@ -4,8 +4,8 @@ using Autofac.Features.OwnedInstances;
 using PIAWatchdog.Exceptions;
 using PIAWatchdog.Injection;
 using PIAWatchdog.Properties;
+using PIAWatchdog.Services.Enablement;
 using PIAWatchdog.Services.Health;
-using PIAWatchdog.Services.Killing;
 
 namespace PIAWatchdog.Services.Watchdog
 {
@@ -19,12 +19,14 @@ namespace PIAWatchdog.Services.Watchdog
     public class WatchdogManagerImpl : WatchdogManager
     {
         private readonly Func<Owned<Watchdog>> watchdogFactory;
+        private readonly Func<Owned<ProcessEnabler>> processEnablerFactory;
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private Owned<Watchdog> watchdog;
 
-        public WatchdogManagerImpl(HealthChecker healthChecker, ProcessKiller processKiller, Func<Owned<Watchdog>> watchdogFactory)
+        public WatchdogManagerImpl(Func<Owned<ProcessEnabler>> processEnablerFactory, Func<Owned<Watchdog>> watchdogFactory)
         {
+            this.processEnablerFactory = processEnablerFactory;
             this.watchdogFactory = watchdogFactory;
         }
 
@@ -43,6 +45,11 @@ namespace PIAWatchdog.Services.Watchdog
             watchdog.Value.HostToWatch = settings.healthCheckPingHost;
             watchdog.Value.ProcessesToKillOnHostDown = settings.processesToKillOnOutage;
             watchdog.Value.ConsecutiveDownForOutage = settings.consecutiveDownForOutage;
+
+            using (Owned<ProcessEnabler> processEnabler = processEnablerFactory())
+            {
+                processEnabler.Value.Processes = watchdog.Value.ProcessesToKillOnHostDown;
+            }
 
             watchdog.Value.Start(cancellationTokenSource.Token);
         }

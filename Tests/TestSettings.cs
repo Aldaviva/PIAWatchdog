@@ -79,11 +79,11 @@ namespace Tests
             Action validateMethod = settings.Validate;
             if (isValid)
             {
-                validateMethod.ShouldNotThrow<SettingsException>();
+                validateMethod.Should().NotThrow<SettingsException>();
             }
             else
             {
-                validateMethod.ShouldThrow<SettingsException>();
+                validateMethod.Should().Throw<SettingsException>();
             }
         }
 

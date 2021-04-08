@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using FluentAssertions;
-using PIAWatchdog.Services.Killing;
+using PIAWatchdog.Services.Enablement;
 using Xunit;
 
 namespace Tests.Services.Killing
@@ -19,7 +19,7 @@ namespace Tests.Services.Killing
 
             testProcesses.Should().NotContain(process => process.HasExited, "haven't killed anything yet");
 
-            await processKiller.KillProcess("calc", cancellationTokenSource.Token);
+            await processKiller.DisableProcesses(cancellationTokenSource.Token);
 
             testProcesses.Should().OnlyContain(process => process.HasExited, "all processes should have been killed");
         }
